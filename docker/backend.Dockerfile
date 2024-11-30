@@ -32,8 +32,16 @@ ENV NODE_MAJOR=20
 RUN echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_$NODE_MAJOR.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list
 RUN apt-get update && apt-get install nodejs -y
 
+# Configuration Apache pour le port 8000 et le module rewrite
+RUN echo "Listen 8000" >> /etc/apache2/ports.conf
+RUN a2enmod rewrite
+
+# Copier la configuration Apache
+COPY apache.conf /etc/apache2/sites-available/000-default.conf
+
 # Permissions
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html
 
-EXPOSE 80
+# Exposer aussi le port 8000
+EXPOSE 80 8000  

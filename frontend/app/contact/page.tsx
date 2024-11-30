@@ -8,7 +8,7 @@ export default function TestPage() {
   const fetchMessage = async () => {
     try {
       console.log('Fetching message...'); // Pour le debug
-      const response = await fetch('http://localhost:8000/api/index.php', {
+      const response = await fetch('http://localhost:8000/api/index-old.php', {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
@@ -34,7 +34,7 @@ export default function TestPage() {
       </button>
       
       {message && (
-        <div className="mt-4 p-4 bg-gray-100 rounded">
+        <div className="mt-4 p-4 bg-gray-100 rounded text-black">
           {message}
         </div>
       )}

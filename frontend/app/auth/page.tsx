@@ -57,7 +57,7 @@ export default function AuthTest() {
       <div className="w-full max-w-md space-y-6">
         <h1 className="text-2xl font-bold text-center">Test d&apos;authentification</h1>
         
-        <div className="space-y-4">
+        <div className="space-y-4 ">
           <div>
             <label className="block text-sm font-medium mb-2">Email</label>
             <input
@@ -95,7 +95,7 @@ export default function AuthTest() {
 
         {response && (
           <div className="mt-4 p-4 bg-gray-100 rounded">
-            <pre className="whitespace-pre-wrap">
+            <pre className="whitespace-pre-wrap text-black">
               {JSON.stringify(response, null, 2)}
             </pre>
           </div>

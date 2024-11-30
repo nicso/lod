@@ -1,47 +1,48 @@
 <?php
-
-namespace models;
+namespace App\Models;
 
 use PDO;
 use PDOException;
 
-class Connexion
-{
-//    const SERVER_NAME = "docker-lamp-mariadb-1";
-    const SERVER_NAME = "mariadb";
-    const USERNAME = "root";
-    const PASSWORD = "pass";
-    const DB_NAME = 'lod';
-
-    private static $instance = NULL;
-
+class Connexion {
+    private static ?Connexion $instance = null;
     private ?PDO $conn = null;
 
-    static public function getInstance(): ?Connexion
-    {
-        if (self::$instance === NULL) {
-            try {
-                self::$instance = new Connexion();
-            } catch (PDOException $e) {
-                echo $e->getMessage();
-            }
+    private function __construct() {
+        try {
+            $this->conn = new PDO(
+                'mysql:host=mariadb;dbname=lod',
+                'root',
+                'pass',
+                [
+                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
+                ]
+            );
+        } catch (PDOException $e) {
+            throw new PDOException($e->getMessage());
         }
+    }
 
+    public static function getInstance(): Connexion {
+        if (self::$instance === null) {
+            self::$instance = new Connexion();
+        }
         return self::$instance;
     }
 
-    /*
-     * Protected CTOR
-     */
-    protected function __construct()
-    {
-        $this->conn = new PDO("mysql:host=". self::SERVER_NAME .";dbname=".self::DB_NAME, self::USERNAME, self::PASSWORD);
-        $this->conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-        $this->conn->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+    public function getConn(): PDO {
+        if ($this->conn === null) {
+            throw new PDOException("La connexion n'est pas établie");
+        }
+        return $this->conn;
     }
 
-    public function getConn(): PDO
-    {
-        return $this->conn;
+    // Empêcher le clonage de l'instance
+    private function __clone() {}
+
+    // Empêcher la désérialisation de l'instance
+    public function __wakeup() {
+        throw new \Exception("Cannot unserialize singleton");
     }
 }

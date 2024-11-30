@@ -4,10 +4,11 @@ services:
       context: ./backend
       dockerfile: ../docker/backend.Dockerfile
     ports:
-      - "8000:80"
+      - "8000:8000"
     volumes:
       - ./backend:/var/www/html
       - /var/www/html/vendor
+      - ./apache.conf:/etc/apache2/sites-available/000-default.conf
     environment:
       - DB_HOST=mariadb
       - DB_PORT=3306
