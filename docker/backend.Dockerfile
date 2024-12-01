@@ -37,11 +37,14 @@ RUN echo "Listen 8000" >> /etc/apache2/ports.conf
 RUN a2enmod rewrite
 
 # Copier la configuration Apache
-COPY apache.conf /etc/apache2/sites-available/000-default.conf
+# COPY apache.conf /etc/apache2/sites-available/000-default.conf
 
 # Permissions
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html
+
+RUN composer install
+RUN composer dump-autoload
 
 # Exposer aussi le port 8000
 EXPOSE 80 8000  
