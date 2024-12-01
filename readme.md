@@ -15,6 +15,7 @@ Then, install the dependencies with the following command in the frontend folder
 
 ```bash
 npm install
+npm run dev
 ```
 
 ## Docker stack :
@@ -22,7 +23,9 @@ npm install
 To run the project with docker-compose, run the following command in the root folder:
 
 ```bash
-docker-compose up -d
+docker compose up -d
+docker compose composer install
+docker compose composer dump-autoload
 ```
 
 the stack is composed of :

@@ -2,7 +2,7 @@
 
 export default function Navbar() {
   return (
-    <header className="fixed w-full z-10 top-0 border-b border-zinc-800">
+    <header className="fixed w-full z-10 top-0 border-b border-zinc-800 bg-zinc-900 h-16">
       <nav className="flex items-center justify-between p-4 mx-auto">
         <div className="flex items-center">
           <a href="/" className="text-xl font-bold flex items-center gap-2 relative">

@@ -43,8 +43,5 @@ RUN a2enmod rewrite
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html
 
-RUN composer install
-RUN composer dump-autoload
-
 # Exposer aussi le port 8000
 EXPOSE 80 8000  
