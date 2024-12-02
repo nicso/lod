@@ -1,0 +1,18 @@
+
+.project-detail{
+    position: relative;
+    width: 350px;
+    height: 200px;
+
+}
+.project-thumbnail {
+    height: 100%;
+    object-fit: cover;
+    position: absolute;
+    top: 0;
+    z-index: -1;
+
+    &img{
+        max-width: none !important;
+    }
+}

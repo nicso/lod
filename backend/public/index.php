@@ -17,16 +17,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit();
 }
 
+// Gestion des erreurs PHP
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
 // Router basique
 $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $routes = [
-    '/api/auth/login' => 'App\Controllers\AuthController@login'
+    '/api/auth/login' => 'App\Controllers\AuthController@login',
+    '/api/projects/{id}' => 'App\Controllers\ProjectController@show'
 ];
 
-if (isset($routes[$uri])) {
-    [$controller, $method] = explode('@', $routes[$uri]);
-    $controllerInstance = new $controller();
-    $controllerInstance->$method();
+// if (isset($routes[$uri])) {
+//     [$controller, $method] = explode('@', $routes[$uri]);
+//     $controllerInstance = new $controller();
+//     $controllerInstance->$method();
+// } else {
+//     http_response_code(404);
+//     echo json_encode(['success' => false, 'message' => 'Route non trouvée']);
+// }
+
+if ($uri === '/api/auth/login') {
+    $controller = new App\Controllers\AuthController();
+    $controller->login();
+} elseif (preg_match('#^/api/projects/(\d+)$#', $uri)) {
+    $controller = new App\Controllers\ProjectController();
+    $controller->show();
+} elseif ($uri === '/api/projects') {
+    $controller = new App\Controllers\ProjectController();
+    $controller->index();
 } else {
     http_response_code(404);
     echo json_encode(['success' => false, 'message' => 'Route non trouvée']);
