@@ -71,4 +71,28 @@ class ProjectController {
             ]);
         }
     }
+
+    public function indexByTag($tagId) {
+        try {
+            $projects = $this->projectModel->getProjectsByTag($tagId);
+            $projectsArray = array_map(function($project){
+                return $project->toArray();
+            }, $projects);
+
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => true,
+                'projects' => $projectsArray
+            ]);
+        } catch (\Exception $e) {
+            header('Content-Type: application/json');
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+
+
 }

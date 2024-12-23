@@ -5,7 +5,7 @@ use App\Models\Connexion;
 use PDO;
 
 class Project{
-    
+
     private $conn;
     private $id;
     private $title;
@@ -18,15 +18,23 @@ class Project{
     private $id_category;
     private $status;
     private $author;
+    private $tags;
 
     public function __construct() {
         $this->conn = Connexion::getInstance()->getConn();
+    }
+    public function getTags(): ?array {
+        return $this->tags;
+    }
+    public function setTags(?array $tags): Project {
+        $this->tags = $tags;
+        return $this;
     }
 
     public function getId() : ?int{
         return $this->id;
     }
-    
+
     public function setId( $id ) : Project{
         $this->id = $id;
         return $this;
@@ -105,7 +113,7 @@ class Project{
 
     public static function hydrate($data){
         $project = new Project();
-    
+
         $project
             ->setId($data["id"] ?? null)
             ->setTitle($data["title"] ?? null)
@@ -125,28 +133,34 @@ class Project{
     public function find($id) {
         try {
             $stmt = $this->conn->prepare('
-                SELECT 
+                SELECT
                     p.*,
                     u.id as author_id,
                     u.userName as author_username,
                     u.firstName as author_firstname,
                     u.lastName as author_lastname,
                     u.profile_picture as author_profile_picture,
-                    u.email as author_email
+                    u.email as author_email,
+                    GROUP_CONCAT(t.id) as tag_ids,
+                    GROUP_CONCAT(t.tag_name) as tag_names
                 FROM project p
                 LEFT JOIN project_user pu ON p.id = pu.id_project
                 LEFT JOIN user u ON pu.id_user = u.id
+                LEFT JOIN project_tags pt ON p.id = pt.id_project
+                LEFT JOIN tag t ON pt.id_tag = t.id
                 WHERE p.id = ?
+                GROUP BY p.id
             ');
             $stmt->execute([$id]);
             $data = $stmt->fetch(PDO::FETCH_ASSOC);
-            
+
             if ($data) {
                 // Séparer les données du projet et de l'auteur
                 $projectData = array_filter($data, function($key) {
                     return !str_starts_with($key, 'author_');
                 }, ARRAY_FILTER_USE_KEY);
 
+                // Préparer les données de l'auteur
                 $authorData = null;
                 if ($data['author_id']) {
                     $authorData = [
@@ -158,10 +172,20 @@ class Project{
                         'email' => $data['author_email']
                     ];
                 }
+                // Préparer les données des tags
+                $tags = null;
+                if ($data['tag_ids'] && $data['tag_names']) {
+                    $tagIds = explode(',', $data['tag_ids']);
+                    $tagNames = explode(',', $data['tag_names']);
+                    $tags = array_map(function($id, $name) {
+                        return ['id' => $id, 'name' => $name];
+                    }, $tagIds, $tagNames);
+                }
 
                 $project = self::hydrate($projectData);
                 $project->setAuthor($authorData);
-                
+                $project->setTags($tags);
+
                 return $project;
             }
             return null;
@@ -170,24 +194,29 @@ class Project{
             throw new \Exception("Erreur lors de la récupération du projet: " . $e->getMessage());
         }
     }
-    
+
     public function getAll() {
         try {
             $stmt = $this->conn->query('
-                SELECT 
+                SELECT
                     p.*,
                     u.id as author_id,
                     u.userName as author_username,
                     u.firstName as author_firstname,
                     u.lastName as author_lastname,
                     u.profile_picture as author_profile_picture,
-                    u.email as author_email
+                    u.email as author_email,
+                    GROUP_CONCAT(t.id) as tag_ids,
+                    GROUP_CONCAT(t.tag_name) as tag_names
                 FROM project p
                 LEFT JOIN project_user pu ON p.id = pu.id_project
                 LEFT JOIN user u ON pu.id_user = u.id
+                LEFT JOIN project_tags pt ON p.id = pt.id_project
+                LEFT JOIN tag t ON pt.id_tag = t.id
+                GROUP BY p.id
                 ORDER BY p.project_date DESC
             ');
-            
+
             $projects = [];
             while ($data = $stmt->fetch(PDO::FETCH_ASSOC)) {
                 $projectData = array_filter($data, function($key) {
@@ -205,12 +234,22 @@ class Project{
                         'email' => $data['author_email']
                     ];
                 }
+                // Traitement des tags
+                $tags = null;
+                if ($data['tag_ids'] && $data['tag_names']) {
+                    $tagIds = explode(',', $data['tag_ids']);
+                    $tagNames = explode(',', $data['tag_names']);
+                    $tags = array_map(function($id, $name) {
+                        return ['id' => $id, 'name' => $name];
+                    }, $tagIds, $tagNames);
+                }
 
                 $project = self::hydrate($projectData);
                 $project->setAuthor($authorData);
+                $project->setTags($tags);
                 $projects[] = $project;
             }
-            
+
             return $projects;
         } catch (\PDOException $e) {
             throw new \Exception("Erreur lors de la récupération des projets: " . $e->getMessage());
@@ -218,7 +257,7 @@ class Project{
     }
     public function getAllAsArray() {
         try {
-            $projects = $this->getAll(); 
+            $projects = $this->getAll();
             return array_map(function($project) {
                 return $project->toArray();
             }, $projects);
@@ -234,12 +273,12 @@ class Project{
             // Insérer d'abord le projet
             $stmt = $this->conn->prepare('
                 INSERT INTO project (
-                    title, content, thumbnail, project_date, 
-                    last_modification_date, viewcount, is_featured, 
+                    title, content, thumbnail, project_date,
+                    last_modification_date, viewcount, is_featured,
                     id_category, status
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             ');
-            
+
             $stmt->execute([
                 $data['title'],
                 $data['content'],
@@ -259,7 +298,7 @@ class Project{
                 INSERT INTO project_user (id_project, id_user)
                 VALUES (?, ?)
             ');
-            
+
             $stmt->execute([$projectId, $userId]);
 
             $this->conn->commit();
@@ -285,15 +324,86 @@ class Project{
             'status' => $this->status
         ];
 
-        // Ajouter l'auteur s'il existe
         if ($this->author) {
             $data['author'] = $this->author;
+        }
+
+        if ($this->tags) {
+            $data['tags'] = $this->tags;
         }
 
         return $data;
     }
 
+    public function getProjectsByTag($tagId) {
+        try {
+            $stmt = $this->conn->prepare('
+                SELECT DISTINCT
+                    p.*,
+                    u.id as author_id,
+                    u.userName as author_username,
+                    u.firstName as author_firstname,
+                    u.lastName as author_lastname,
+                    u.profile_picture as author_profile_picture,
+                    u.email as author_email,
+                    GROUP_CONCAT(t.id) as tag_ids,
+                    GROUP_CONCAT(t.tag_name) as tag_names
+                FROM project p
+                LEFT JOIN project_user pu ON p.id = pu.id_project
+                LEFT JOIN user u ON pu.id_user = u.id
+                LEFT JOIN project_tags pt ON p.id = pt.id_project
+                LEFT JOIN tag t ON pt.id_tag = t.id
+                WHERE EXISTS (
+                    SELECT 1
+                    FROM project_tags pt2
+                    WHERE pt2.id_project = p.id
+                    AND pt2.id_tag = ?
+                )
+                GROUP BY p.id
+                ORDER BY p.project_date DESC
+            ');
+
+            $stmt->execute([$tagId]);
+
+            $projects = [];
+            while ($data = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                error_log("Projet trouve: " . json_encode($data));
+                $projectData = array_filter($data, function($key) {
+                    return !str_starts_with($key, 'author_');
+                }, ARRAY_FILTER_USE_KEY);
+
+                $authorData = null;
+                if ($data['author_id']) {
+                    $authorData = [
+                        'id' => $data['author_id'],
+                        'userName' => $data['author_username'],
+                        'firstName' => $data['author_firstname'],
+                        'lastName' => $data['author_lastname'],
+                        'profile_picture' => $data['author_profile_picture'],
+                        'email' => $data['author_email']
+                    ];
+                }
+                // Traitement des tags
+                $tags = null;
+                if ($data['tag_ids'] && $data['tag_names']) {
+                    $tagIds = explode(',', $data['tag_ids']);
+                    $tagNames = explode(',', $data['tag_names']);
+                    $tags = array_map(function($id, $name) {
+                        return ['id' => $id, 'name' => $name];
+                    }, $tagIds, $tagNames);
+                }
+
+                $project = self::hydrate($projectData);
+                $project->setAuthor($authorData);
+                $project->setTags($tags);
+                $projects[] = $project;
+            }
+            error_log("Nombre total de projets trouves: " . count($projects));
+            return $projects;
+        } catch (\PDOException $e) {
+            throw new \Exception("Erreur lors de la récupération des projets par tag: " . $e->getMessage());
+        }
+    }
 
 
-    
 }

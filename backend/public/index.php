@@ -46,7 +46,11 @@ if ($uri === '/api/auth/login') {
 } elseif ($uri === '/api/projects') {
     $controller = new App\Controllers\ProjectController();
     $controller->index();
-} else {
+} elseif (preg_match('#^/api/projects/tag/(\d+)$#', $uri, $matches)) {
+    $controller = new App\Controllers\ProjectController();
+    $controller->indexByTag($matches[1]);
+}
+ else {
     http_response_code(404);
     echo json_encode(['success' => false, 'message' => 'Route non trouvée']);
 }
