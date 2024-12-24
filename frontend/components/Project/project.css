@@ -1,48 +1,82 @@
-
-.project-detail{
+.main-container{
+    margin-top: 150px;
+}
+.projects-wrapper{
     display: grid;
-    grid-template-rows: 1fr 5fr 3fr 3fr 2fr;
-    grid-template-columns: 1fr 6fr;
-    grid-template-areas:
-    "tags tags"
-    "empty empty"
-    "avatar title"
-    "avatar author"
-    "avatar category"
-    ;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 20px;
+}
+.project-card{
     position: relative;
-    width: 350px;
-    height: 200px;
+    height: 350px;
+    display: grid;
+    gap: 10px;
+    grid-template-rows: fit-content(100%) auto fit-content(100%) fit-content(100%);
+    grid-template-areas:
+    "title"
+    "tags"
+    "author"
+    "meta"
+    ;
+    color: var(--gray-100);
+    overflow: clip;
+    &:hover{
+        cursor: pointer;
+        .project-thumbnail{
+            scale: 1;
+        }
+        .project-title{
+            border-bottom: 5px solid var(--yellow);
+        }
+    }
 
 }
-.project-thumbnail {
-    height: 100%;
-    object-fit: cover;
+.project-title{
+    grid-area: title;
+    background: var(--gray-600);
+    font-weight: 700;
+    font-size: 2rem;
+    height: fit-content;
+    padding-inline: 10px;
+    border-bottom: 1px solid transparent;
+    transition: border 0.3s ease-in-out;
+}
+.project-author-container{
+    display: flex;
+    grid-area: author;
+    gap: 10px;
+    align-items: center;
+    padding-inline: 10px;
+}
+.project-avatar{
+    width: 2rem;
+    border-radius: 50%;
+}
+.project-thumbnail{
     position: absolute;
-    top: 0;
     z-index: -1;
-
-    &img{
-        max-width: none !important;
+    height: 100%;
+    width: 100%;
+    object-fit: cover;
+    scale: 1.1;
+    transition: scale 0.3s ease-in-out;
+}
+.project-tags{
+    grid-area: tags;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding-inline: 10px;
+    .project-tag{
+        font-size: 0.8rem;
+        height: fit-content;
+        background: var(--yellow);
+        color: var(--gray-600);
+        border-radius: 20px;
+        padding-inline: 10px;
     }
 }
-.project-title {
-    grid-area: title;
-    font-size: 1.5rem;
-    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.0));
-}
-.project-author {
-    grid-area: author;
-    font-size: 1.2rem;
-}
-
-.project-avatar {
-    grid-area: avatar;
-    width: 2rem;
-    height: 2rem;
-}
 .project-meta{
-    position: absolute;
-    right: 0;
-    bottom: 0;
+    grid-area: meta;
+    padding-inline: 10px;
 }

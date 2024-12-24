@@ -3,7 +3,7 @@ type ProjectTitleProps = {
 };
 
 export const ProjectTitle = ({ title }: ProjectTitleProps) => (
-    <h2 className="font-bold text-2xl mb-4 project-title">
+    <h2 className="project-title">
         {title}
     </h2>
 );

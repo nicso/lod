@@ -4,9 +4,9 @@ type ProjectThumbnailProps = {
 };
 
 export const ProjectThumbnail = ({ src, alt }: ProjectThumbnailProps) => (
-    <img 
+    <img
         src={src}
-        alt={alt} 
-        className="w-full object-cover w-full h-full project-thumbnail" 
+        alt={alt}
+        className="project-thumbnail"
     />
 );

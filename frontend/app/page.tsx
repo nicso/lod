@@ -5,6 +5,7 @@ import { ProjectCard } from "@/components/ProjectCard";
 import { useEffect, useState } from "react";
 import { LoadingPlaceholder } from "@/components/LoadingPlaceholder";
 import { ErrorMessage } from "@/components/ErrorMessage";
+import { SearchInput } from "@/components/SearchInput";
 
 interface Project {
     id: number;
@@ -57,10 +58,12 @@ export default function Home() {
     }
 
     return (
-        <div className="container mx-auto p-8 pb-20 mt-20">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {projects.map(project => (
-                    <ProjectCard
+        <div className="main-container">
+            <SearchInput />
+            <div className="projects-wrapper">
+                    {projects.map(project => (
+                        <ProjectCard
+
                         key={project.id}
                         projectId={project.id}
                         fields={[
@@ -73,8 +76,8 @@ export default function Home() {
                             'is_featured',
                             'author'
                         ]}
-                    />
-                ))}
+                        />
+                    ))}
             </div>
         </div>
     );

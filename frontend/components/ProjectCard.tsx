@@ -10,6 +10,7 @@ import { ProjectAuthor } from './Project/ProjectAuthor';
 import type { Project } from './Types';
 import { ProjectTags } from './Project/ProjectTags';
 import './Project/project.css';
+import Modal from "@/components/ui/Modal/Modal";
 
 
 type ProjectCardProps = {
@@ -33,32 +34,52 @@ export const ProjectCard = ({ projectId, fields = defaultFields }: ProjectCardPr
     if (!projectData) {
         return <div>Aucune donnée disponible</div>;
     }
+    const modalContent = (
+        <ProjectContent
+        key={projectData.id}
+        projectId={projectData.id}
+        fields={[
+            'title',
+            'tags',
+            'content',
+            'thumbnail',
+            'project_date',
+            'last_modification_date',
+            'viewcount',
+            'is_featured',
+            'author' ]}
+            />
+    );
 
     return (
-        <div className="project-detail ">
-            {projectData.tags && <ProjectTags tags={projectData.tags} />}
-            {projectData.title && <ProjectTitle title={projectData.title} />}
+        <Modal className="project-card" data={modalContent}>
 
-            {projectData.author && <ProjectAuthor author={projectData.author} />}
+                {projectData.tags && <ProjectTags tags={projectData.tags} />}
+                {projectData.title && <ProjectTitle title={projectData.title} />}
 
-            {projectData.thumbnail && (
-                <ProjectThumbnail
+                {projectData.author && <ProjectAuthor author={projectData.author} />}
+
+                {projectData.thumbnail && (
+                    <ProjectThumbnail
                     src={projectData.thumbnail}
                     alt={projectData.title || ''}
+                    />
+                )}
+
+                {/* <ProjectDates
+                    projectDate={projectData.project_date}
+
+                    lastModificationDate={projectData.last_modification_date}
+                /> */}
+
+                {/* {projectData.content && <ProjectContent content={projectData.content} />} */}
+
+                <ProjectMeta
+                    viewcount={projectData.viewcount}
+                    isFeatured={projectData.is_featured}
                 />
-            )}
 
-            {/* <ProjectDates
-                projectDate={projectData.project_date}
-                lastModificationDate={projectData.last_modification_date}
-            /> */}
 
-            {/* {projectData.content && <ProjectContent content={projectData.content} />} */}
-
-            <ProjectMeta
-                viewcount={projectData.viewcount}
-                isFeatured={projectData.is_featured}
-            />
-        </div>
+        </Modal>
     );
 };

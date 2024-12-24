@@ -4,14 +4,14 @@ type ProjectMetaProps = {
 };
 
 export const ProjectMeta = ({ viewcount, isFeatured }: ProjectMetaProps) => (
-    <div className="flex flex-wrap gap-2 mt-4 project-meta">
+    <div className="project-meta">
         {viewcount && (
-            <div className="tag bg-zinc-800 text-zinc-500 px-2 py-1 rounded-lg project-tag">
+            <div className="project-views">
                 {viewcount} views
             </div>
         )}
         {isFeatured && (
-            <div className="tag bg-zinc-800 text-zinc-500 px-2 py-1 rounded-lg project-tag">
+            <div className="project-featured">
                 Featured
             </div>
         )}

@@ -7,15 +7,18 @@ type ProjectAuthorProps = {
 
 export const ProjectAuthor = ({ author }: ProjectAuthorProps) => (
     <>
+        <div className="project-author-container">
+
         {author.profile_picture && (
             <img
-                src={author.profile_picture}
-                alt={author.userName}
-                className="w-8 h-8 rounded-full project-avatar"
+            src={author.profile_picture}
+            alt={author.userName}
+            className="project-avatar"
             />
         )}
-        <span className="text-sm text-zinc-200 project-author">
+        <span className="project-author">
             By {author.userName}
         </span>
+        </div>
     </>
 );

@@ -9,6 +9,11 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@milkdown/crepe": "^7.5.9",
+    "@milkdown/kit": "^7.5.9",
+    "@milkdown/react": "^7.5.9",
+    "@milkdown/theme-nord": "^7.5.9",
+    "@tailwindcss/typography": "^0.5.15",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "next": "15.0.3",
