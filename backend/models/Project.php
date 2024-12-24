@@ -405,5 +405,51 @@ class Project{
         }
     }
 
+    public function update($data) {
+        try {
+            $this->conn->beginTransaction();
+
+            $stmt = $this->conn->prepare('
+                UPDATE project
+                SET title = ?,
+                    content = ?,
+                    thumbnail = ?,
+                    last_modification_date = NOW(),
+                    id_category = ?,
+                    status = ?
+                WHERE id = ?
+            ');
+
+            $stmt->execute([
+                $data['title'],
+                $data['content'],
+                $data['thumbnail'],
+                $data['id_category'],
+                $data['status'],
+                $data['id']
+            ]);
+
+            // Update tags if provided
+            if (isset($data['tags'])) {
+                // First remove all existing tags
+                $stmt = $this->conn->prepare('DELETE FROM project_tags WHERE id_project = ?');
+                $stmt->execute([$data['id']]);
+
+                // Then add new tags
+                $stmt = $this->conn->prepare('INSERT INTO project_tags (id_project, id_tag) VALUES (?, ?)');
+                foreach ($data['tags'] as $tag) {
+                    $stmt->execute([$data['id'], $tag['id']]);
+                }
+            }
+
+            $this->conn->commit();
+            return true;
+
+        } catch (\PDOException $e) {
+            $this->conn->rollBack();
+            throw new \Exception("Erreur lors de la mise à jour du projet: " . $e->getMessage());
+        }
+    }
+
 
 }

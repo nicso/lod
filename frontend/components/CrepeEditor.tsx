@@ -1,16 +1,23 @@
-// CrepeEditor.tsx
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
 import { Crepe } from '@milkdown/crepe';
 import "@milkdown/crepe/theme/common/style.css";
 import "@milkdown/crepe/theme/frame.css";
 
-const CrepeEditor = ({ defaultValue = '# Hello, Milkdown!' }) => {
+// Définir l'interface des méthodes exposées
+export interface CrepeEditorHandle {
+    getMarkdown: () => string | undefined;
+}
+
+const CrepeEditor = forwardRef<CrepeEditorHandle, { defaultValue: string }>(({ defaultValue }, ref) => {
     const containerRef = useRef<HTMLDivElement | null>(null);
     const [editor, setEditor] = useState<Crepe | null>(null);
     const initializedRef = useRef(false);
 
+    useImperativeHandle(ref, () => ({
+        getMarkdown: () => editor?.getMarkdown()
+    }));
+
     useEffect(() => {
-        // Vérifier si déjà initialisé
         if (initializedRef.current) return;
         initializedRef.current = true;
 
@@ -31,9 +38,9 @@ const CrepeEditor = ({ defaultValue = '# Hello, Milkdown!' }) => {
                 initializedRef.current = false;
             }
         };
-    }, []); // Supprimer defaultValue des dépendances
+    }, []);
 
     return <div ref={containerRef} />;
-};
+});
 
 export default CrepeEditor;
