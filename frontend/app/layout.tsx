@@ -5,6 +5,7 @@ import "./globals.css";
 
 import Navbar from "../components/Navbar";
 import Footer from "@/components/Footer";
+import { AuthProvider } from "@/components/auth/AuthContext";
 
 
 
@@ -32,12 +33,12 @@ export default function RootLayout({
   return (
     <html lang="en">
 
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        <Navbar />
-        {children}
-        <Footer />
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <AuthProvider>
+            <Navbar />
+            {children}
+            <Footer />
+        </AuthProvider>
       </body>
 
     </html>

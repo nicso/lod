@@ -26,6 +26,7 @@ const CrepeEditor = forwardRef<CrepeEditorHandle, { defaultValue: string }>(({ d
             defaultValue: defaultValue,
         });
 
+        newEditor.setReadonly(false);
         newEditor.create().then(() => {
             console.log('Editor created');
             setEditor(newEditor);

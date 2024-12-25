@@ -2,11 +2,7 @@ import { useRef } from 'react';
 import type { CrepeEditorHandle } from '@/components/CrepeEditor';
 import type { Project } from '../Types';
 import { useProject } from '../../hooks/useProjects';
-
 import  CrepeEditor  from '@/components/CrepeEditor'
-
-// import './style.css'
-
 
 type projectContentProps = {
     projectId: number;

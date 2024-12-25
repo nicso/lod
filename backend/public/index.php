@@ -49,6 +49,12 @@ if ($uri === '/api/auth/login') {
 } elseif (preg_match('#^/api/projects/tag/(\d+)$#', $uri, $matches)) {
     $controller = new App\Controllers\ProjectController();
     $controller->indexByTag($matches[1]);
+} elseif ($uri === '/api/auth/check') {
+    $controller = new App\Controllers\SessionController();
+    $controller->checkSession();
+} elseif ($uri === '/api/auth/logout') {
+    $controller = new App\Controllers\SessionController();
+    $controller->logout();
 }
  else {
     http_response_code(404);
