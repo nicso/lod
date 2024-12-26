@@ -63,7 +63,6 @@ export default function Home() {
             <div className="projects-wrapper">
                     {projects.map(project => (
                         <ProjectCard
-
                         key={project.id}
                         projectId={project.id}
                         fields={[
@@ -78,6 +77,7 @@ export default function Home() {
                         ]}
                         />
                     ))}
+                    
             </div>
         </div>
     );

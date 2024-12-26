@@ -1,0 +1,46 @@
+.illumination {
+    --min-illumination: 0.1;
+    --max-illumination: 0.23;
+    --illumination-time: 10s;
+
+    outline: hotpink;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    aspect-ratio: 1;
+    background-image: url('/gradient.png');
+    background-size: 200% 200%;
+    background-repeat: no-repeat;
+    background-position: 100% 100%;
+    opacity: 0.2;
+    z-index: -10000;
+    animation: illumination var(--illumination-time) infinite linear;
+}
+
+.logo-txt {
+    color: #d0d0d0;
+    background: linear-gradient(to right, var(--yellow) 50%, var(--gray-100) 60%);
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-wrap: nowrap;
+    font-size: 2.5vw;
+    font-weight: 900;
+    letter-spacing: -0.2em;
+    word-spacing: 0.2em;
+    padding-right: 10px;
+}
+
+@keyframes illumination {
+    0% {
+        opacity: var(--min-illumination);
+    }
+
+    50% {
+        opacity: var(--max-illumination);
+    }
+
+    100% {
+        opacity: var(--min-illumination);
+    }
+}

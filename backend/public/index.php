@@ -1,7 +1,11 @@
 <?php
-require_once __DIR__ . '/../vendor/autoload.php';
 
-use App\Models\Connexion;
+// Activer la gestion des erreurs
+error_reporting(E_ALL);
+ini_set('display_errors', 0); // Désactiver l'affichage des erreurs
+ini_set('log_errors', 1); // Activer la journalisation des erreurs
+
+require_once __DIR__ . '/../vendor/autoload.php';
 
 // Headers CORS
 header('Access-Control-Allow-Origin: http://localhost:3000');
@@ -22,20 +26,20 @@ error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
 // Router basique
+try{
 $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+$method = $_SERVER['REQUEST_METHOD'];
+
+// Log des informations de la requête
+error_log("Request Method: " . $method);
+error_log("Request URI: " . $uri);
+error_log("Raw Request Body: " . file_get_contents('php://input'));
+
 $routes = [
     '/api/auth/login' => 'App\Controllers\AuthController@login',
     '/api/projects/{id}' => 'App\Controllers\ProjectController@show'
 ];
 
-// if (isset($routes[$uri])) {
-//     [$controller, $method] = explode('@', $routes[$uri]);
-//     $controllerInstance = new $controller();
-//     $controllerInstance->$method();
-// } else {
-//     http_response_code(404);
-//     echo json_encode(['success' => false, 'message' => 'Route non trouvée']);
-// }
 
 if ($uri === '/api/auth/login') {
     $controller = new App\Controllers\AuthController();
@@ -43,6 +47,9 @@ if ($uri === '/api/auth/login') {
 } elseif (preg_match('#^/api/projects/(\d+)$#', $uri)) {
     $controller = new App\Controllers\ProjectController();
     $controller->show();
+} elseif ($uri === '/api/projects' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $controller = new App\Controllers\ProjectController();
+    $controller->create();
 } elseif ($uri === '/api/projects') {
     $controller = new App\Controllers\ProjectController();
     $controller->index();
@@ -55,8 +62,27 @@ if ($uri === '/api/auth/login') {
 } elseif ($uri === '/api/auth/logout') {
     $controller = new App\Controllers\SessionController();
     $controller->logout();
+
+} elseif ($uri === '/api/categories') {
+    $controller = new App\Controllers\CategoryController();
+    $controller->index();
+} elseif ($uri === '/api/tags/search') {
+    $controller = new App\Controllers\TagController();
+    $controller->search();
+} elseif ($uri === '/api/tags' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $controller = new App\Controllers\TagController();
+    $controller->create();
 }
  else {
     http_response_code(404);
     echo json_encode(['success' => false, 'message' => 'Route non trouvée']);
+}
+} catch (\Exception $e) {
+    error_log("Erreur dans index.php: " . $e->getMessage());
+    header('Content-Type: application/json');
+    http_response_code(500);
+    echo json_encode([
+        'success' => false,
+        'message' => 'Internal Server Error: ' . $e->getMessage()
+    ]);
 }

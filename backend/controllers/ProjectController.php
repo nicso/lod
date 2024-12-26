@@ -94,5 +94,77 @@ class ProjectController {
         }
     }
 
+    public function create() {
+        header('Content-Type: application/json');
+
+        try {
+            // Vérifier la session
+            session_start();
+            if (!isset($_SESSION['user_id'])) {
+                error_log("Tentative de création de projet sans session utilisateur");
+                http_response_code(401);
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Utilisateur non connecté'
+                ]);
+                return;
+            }
+
+            // Capturer et vérifier les données
+            $rawData = file_get_contents('php://input');
+            error_log("Données brutes reçues: " . $rawData);
+
+            $data = json_decode($rawData, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                throw new \Exception('Données JSON invalides: ' . json_last_error_msg());
+            }
+
+            // Valider les données requises
+            if (empty($data['title']) || empty($data['content']) || empty($data['id_category'])) {
+                throw new \Exception('Données manquantes: titre, contenu et catégorie sont requis');
+            }
+
+            // Créer le projet
+            $projectId = $this->projectModel->createWithAuthor($data, $_SESSION['user_id']);
+            error_log("Projet créé avec l'ID: " . $projectId);
+
+            // Associer les tags si présents
+            if (!empty($data['selectedTags'])) {
+                error_log("Association des tags pour le projet " . $projectId);
+                $this->associateProjectTags($projectId, $data['selectedTags']);
+            }
+
+            echo json_encode([
+                'success' => true,
+                'message' => 'Projet créé avec succès',
+                'projectId' => $projectId
+            ]);
+
+        } catch (\Exception $e) {
+            error_log("Erreur lors de la création du projet: " . $e->getMessage());
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+
+    private function associateProjectTags($projectId, $tags) {
+        try {
+            $conn = $this->projectModel->getConnection();
+            $stmt = $conn->prepare('
+                INSERT INTO project_tags (id_project, id_tag)
+                VALUES (?, ?)
+            ');
+
+            foreach ($tags as $tag) {
+                $stmt->execute([$projectId, $tag['id']]);
+            }
+        } catch (\Exception $e) {
+            throw new \Exception("Erreur lors de l'association des tags: " . $e->getMessage());
+        }
+    }
+
 
 }

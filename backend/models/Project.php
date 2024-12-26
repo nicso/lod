@@ -22,6 +22,11 @@ class Project{
 
     public function __construct() {
         $this->conn = Connexion::getInstance()->getConn();
+        if (!$this->conn) {
+            error_log("Erreur : Connexion non établie dans le constructeur de Project");
+            throw new \Exception("La connexion à la base de données n'a pas pu être établie");
+        }
+        error_log("Connexion établie dans le constructeur de Project");
     }
     public function getTags(): ?array {
         return $this->tags;
@@ -104,6 +109,9 @@ class Project{
     }
     public function getAuthor(): ?array {
         return $this->author;
+    }
+    public function getConnection() {
+        return $this->conn;
     }
 
     public function setAuthor(?array $author): Project {
@@ -266,50 +274,6 @@ class Project{
         }
     }
 
-    public function createWithAuthor($data, $userId) {
-        try {
-            $this->conn->beginTransaction();
-
-            // Insérer d'abord le projet
-            $stmt = $this->conn->prepare('
-                INSERT INTO project (
-                    title, content, thumbnail, project_date,
-                    last_modification_date, viewcount, is_featured,
-                    id_category, status
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ');
-
-            $stmt->execute([
-                $data['title'],
-                $data['content'],
-                $data['thumbnail'],
-                $data['project_date'],
-                $data['last_modification_date'],
-                $data['viewcount'],
-                $data['is_featured'],
-                $data['id_category'],
-                $data['status']
-            ]);
-
-            $projectId = $this->conn->lastInsertId();
-
-            // Créer ensuite la liaison avec l'auteur
-            $stmt = $this->conn->prepare('
-                INSERT INTO project_user (id_project, id_user)
-                VALUES (?, ?)
-            ');
-
-            $stmt->execute([$projectId, $userId]);
-
-            $this->conn->commit();
-            return $projectId;
-
-        } catch (\PDOException $e) {
-            $this->conn->rollBack();
-            throw new \Exception("Erreur lors de la création du projet: " . $e->getMessage());
-        }
-    }
-
     public function toArray(): array {
         $data = [
             'id' => $this->id,
@@ -450,6 +414,138 @@ class Project{
             throw new \Exception("Erreur lors de la mise à jour du projet: " . $e->getMessage());
         }
     }
+    public function createWithAuthor($data, $userId) {
+        error_log("=== DÉBUT DE L'INSERTION DU PROJET ===");
 
+        try {
+            error_log("Data reçue : " . print_r($data, true));
+            error_log("UserID : " . $userId);
+
+            // Vérifier l'état de la connexion
+            if (!$this->conn->getAttribute(PDO::ATTR_CONNECTION_STATUS)) {
+                throw new \Exception("La connexion à la base de données est inactive");
+            }
+            error_log("État de la transaction : " . ($this->conn->inTransaction() ? 'active' : 'inactive'));
+            error_log("Auto-commit : " . ($this->conn->getAttribute(PDO::ATTR_AUTOCOMMIT) ? 'on' : 'off'));
+
+            $this->conn->beginTransaction();
+            error_log("Transaction démarrée");
+
+
+            // Construire la requête SQL complète avec les valeurs
+            $query = "
+                INSERT INTO project (
+                    title,
+                    content,
+                    thumbnail,
+                    project_date,
+                    last_modification_date,
+                    viewcount,
+                    is_featured,
+                    id_category,
+                    status
+                ) VALUES (
+                    :title,
+                    :content,
+                    :thumbnail,
+                    :project_date,
+                    :last_modification_date,
+                    :viewcount,
+                    :is_featured,
+                    :id_category,
+                    :status
+                )
+            ";
+
+            $stmt = $this->conn->prepare($query);
+
+
+            // Préparation des paramètres
+            $params = [
+                ':title' => $data['title'],
+                ':content' => $data['content'],
+                ':thumbnail' => $data['thumbnail'] ?? '',
+                ':project_date' => $data['project_date'],
+                ':last_modification_date' => $data['last_modification_date'],
+                ':viewcount' => $data['viewcount'] ?? 0,
+                ':is_featured' => $data['is_featured'] ? 1 : 0,
+                ':id_category' => $data['id_category'],
+                ':status' => $data['status'] ?? 0
+            ];
+
+            error_log("==== REQUÊTE D'INSERTION ====");
+            error_log("Paramètres : " . print_r($params, true));
+
+            // Log de la requête complète
+            $logQuery = $query;
+            foreach ($params as $key => $value) {
+                $logQuery = str_replace($key, is_string($value) ? "'$value'" : $value, $logQuery);
+            }
+            error_log("Requête SQL complète : " . $logQuery);
+
+            // Exécution de la requête
+            $result = $stmt->execute($params);
+            error_log("Résultat de l'exécution : " . ($result ? "succès" : "échec"));
+
+            if (!$result) {
+                $errorInfo = $stmt->errorInfo();
+                error_log("Erreur PDO : " . print_r($errorInfo, true));
+                throw new \Exception("Échec de l'insertion du projet: " . $errorInfo[2]);
+            }
+
+            $projectId = $this->conn->lastInsertId();
+            error_log("ID du projet créé : " . $projectId);
+
+            // Vérification immédiate de l'insertion
+            $verifyStmt = $this->conn->prepare("SELECT id FROM project WHERE id = ?");
+            $verifyStmt->execute([$projectId]);
+            $verifyResult = $verifyStmt->fetch();
+            error_log("Vérification de l'insertion : " . ($verifyResult ? "projet trouvé" : "projet non trouvé"));
+
+            // Liaison avec l'auteur
+            $userQuery = "INSERT INTO project_user (id_project, id_user) VALUES (:project_id, :user_id)";
+            $userStmt = $this->conn->prepare($userQuery);
+            $userResult = $userStmt->execute([
+                ':project_id' => $projectId,
+                ':user_id' => $userId
+            ]);
+            error_log("Résultat de la liaison utilisateur : " . ($userResult ? "succès" : "échec"));
+
+            if (!$userResult) {
+                $errorInfo = $userStmt->errorInfo();
+                error_log("Erreur PDO liaison utilisateur : " . print_r($errorInfo, true));
+                throw new \Exception("Échec de la liaison utilisateur-projet");
+            }
+
+            // Commit de la transaction
+            $this->conn->commit();
+            error_log("Transaction validée avec succès");
+
+            // Vérification finale
+            $finalVerifyStmt = $this->conn->prepare("
+                SELECT p.*, pu.id_user
+                FROM project p
+                JOIN project_user pu ON p.id = pu.id_project
+                WHERE p.id = ?
+            ");
+            $finalVerifyStmt->execute([$projectId]);
+            $finalVerifyResult = $finalVerifyStmt->fetch();
+            error_log("Vérification finale : " . print_r($finalVerifyResult, true));
+
+            error_log("=== FIN DE L'INSERTION DU PROJET ===");
+            return $projectId;
+
+        } catch (\Exception $e) {
+            error_log("Exception dans createWithAuthor : " . $e->getMessage());
+            error_log("Trace : " . $e->getTraceAsString());
+            try {
+                $this->conn->rollBack();
+                error_log("Transaction annulée");
+            } catch (\Exception $rollbackException) {
+                error_log("Erreur lors de l'annulation de la transaction : " . $rollbackException->getMessage());
+            }
+            throw $e;
+        }
+    }
 
 }

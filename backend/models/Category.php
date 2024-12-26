@@ -1,8 +1,8 @@
 <?php
 
-namespace models;
+namespace App\models;
 use PDOException;
-
+use App\Models\Connexion;
 class Category
 {
 	private int $id;
@@ -34,15 +34,7 @@ class Category
 		return $this;
 	}
 
-	public static function toArray():array
-	{
-		$conn = Connexion::getInstance()->getConn();
-		$stt = $conn->prepare("
-			select id_category, category_name from category;
-		");
-		$stt->execute();
-		return $stt->fetchAll();
-	}
+
 
 	public function save()
 	{
@@ -64,6 +56,16 @@ class Category
 		$category->setId($params['id_category']);
 		return $category;
 	}
+
+    public static function toArray(): array
+    {
+        $conn = Connexion::getInstance()->getConn();
+        $stt = $conn->prepare("
+            SELECT id_category as id, category_name as name FROM category;
+        ");
+        $stt->execute();
+        return $stt->fetchAll();
+    }
 
 
 }

@@ -23,3 +23,4 @@ export const ProjectTags = ({ tags }: ProjectTagsProps) => (
         ))}
     </div>
 );
+
