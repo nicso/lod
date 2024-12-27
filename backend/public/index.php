@@ -72,6 +72,9 @@ if ($uri === '/api/auth/login') {
 } elseif ($uri === '/api/tags' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $controller = new App\Controllers\TagController();
     $controller->create();
+} elseif ($uri === '/api/tags') {
+    $controller = new App\Controllers\TagController();
+    $controller->index();
 }
  else {
     http_response_code(404);

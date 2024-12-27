@@ -1,27 +1,26 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Label } from '@/components/ui/label';
 import { TagInput } from '@/components/ui/tag-input';
+import CrepeEditor, { CrepeEditorHandle } from '@/components/CrepeEditor';
 
 const CreateProjectPage = () => {
+  const editorRef = useRef<CrepeEditorHandle>(null);
   const [formData, setFormData] = useState({
     title: '',
-    content: '',
     thumbnail: '',
     id_category: '',
-    status: 0, // 0 for draft, 1 for published
+    status: 0,
   });
   const [selectedTags, setSelectedTags] = useState([]);
-
   const [categories, setCategories] = useState([]);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Fetch categories on component mount
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -37,77 +36,72 @@ const CreateProjectPage = () => {
     fetchCategories();
   }, []);
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
 
     try {
-        const currentDate = new Date().toISOString().slice(0, 19).replace('T', ' ');
+      const currentDate = new Date().toISOString().slice(0, 19).replace('T', ' ');
+      const categoryId = parseInt(formData.id_category, 10);
 
-        // S'assurer que le category ID est un nombre
-        const categoryId = parseInt(formData.id_category, 10);
-        if (isNaN(categoryId)) {
-            throw new Error('Catégorie invalide');
-        }
+      if (isNaN(categoryId)) {
+        throw new Error('Catégorie invalide');
+      }
 
-        // Formater les données du projet
-        const projectData = {
-            title: formData.title,
-            content: formData.content,
-            thumbnail: formData.thumbnail || '',
-            project_date: currentDate,
-            last_modification_date: currentDate,
-            viewcount: 0,
-            is_featured: false,
-            id_category: categoryId,
-            status: parseInt(formData.status, 10),
-            selectedTags: selectedTags
-        };
+      // Récupérer le contenu Markdown depuis l'éditeur
+      const markdownContent = editorRef.current?.getMarkdown() || '';
 
-        console.log('Données envoyées:', projectData);
+      const projectData = {
+        title: formData.title,
+        content: markdownContent, // Utiliser le contenu de l'éditeur Crepe
+        thumbnail: formData.thumbnail || '',
+        project_date: currentDate,
+        last_modification_date: currentDate,
+        viewcount: 0,
+        is_featured: false,
+        id_category: categoryId,
+        status: parseInt(formData.status.toString(), 10),
+        selectedTags: selectedTags
+      };
 
-        const response = await fetch('http://localhost:8000/api/projects', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(projectData),
-            credentials: 'include'
+      const response = await fetch('http://localhost:8000/api/projects', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(projectData),
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (data.success) {
+        setSuccess(true);
+        setFormData({
+          title: '',
+          thumbnail: '',
+          id_category: '',
+          status: 0,
         });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        console.log('Réponse:', data);
-
-        if (data.success) {
-            setSuccess(true);
-            // Reset form
-            setFormData({
-                title: '',
-                content: '',
-                thumbnail: '',
-                id_category: '',
-                status: 0,
-            });
-            setSelectedTags([]);
-        } else {
-            throw new Error(data.message || 'Erreur lors de la création du projet');
-        }
-
+        setSelectedTags([]);
+      } else {
+        throw new Error(data.message || 'Erreur lors de la création du projet');
+      }
     } catch (err) {
-        console.error('Erreur complète:', err);
-        setError(err.message);
+      console.error('Erreur:', err);
+      setError(err instanceof Error ? err.message : 'Une erreur est survenue');
     } finally {
-        setIsLoading(false);
+      setIsLoading(false);
     }
-};
+  };
 
-  const handleInputChange = (e) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -116,8 +110,8 @@ const CreateProjectPage = () => {
   };
 
   return (
-    <div className="container mx-auto p-6">
-      <Card className="w-full max-w-2xl mx-auto">
+    <div className="container mx-auto p-6 mt-20">
+      <Card className="w-full max-w-4xl mx-auto">
         <CardHeader>
           <CardTitle>Create New Project</CardTitle>
         </CardHeader>
@@ -137,16 +131,10 @@ const CreateProjectPage = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="content">Content</Label>
-              <textarea
-                id="content"
-                name="content"
-                value={formData.content}
-                onChange={handleInputChange}
-                required
-                className="w-full min-h-32 p-2 border rounded-md"
-                placeholder="Project description"
-              />
+              <Label>Content</Label>
+              <div className="min-h-96 border rounded-md">
+                <CrepeEditor ref={editorRef} defaultValue="" readonly={false} />
+              </div>
             </div>
 
             <div className="space-y-2">

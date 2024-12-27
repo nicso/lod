@@ -56,11 +56,41 @@ class ProjectController {
 
     public function index() {
         try {
-            $projects = $this->projectModel->getAllAsArray();
+            // Récupérer le terme de recherche
+            $searchTerm = $_GET['search'] ?? '';
+
+            // Récupérer les tags depuis l'URL (format: tags[]=1&tags[]=2)
+            $tags = isset($_GET['tags']) ? (array)$_GET['tags'] : null;
+
+            // Si les tags sont fournis comme une chaîne unique, les convertir en tableau
+            if (isset($_GET['tags']) && !is_array($_GET['tags'])) {
+                $tags = explode(',', $_GET['tags']);
+            }
+
+            // Convertir les IDs de tags en integers
+            if ($tags) {
+                $tags = array_map('intval', $tags);
+            }
+
+            // Utiliser la méthode de recherche mise à jour
+            $projects = $this->projectModel->search($searchTerm, $tags);
+
+            // Convertir les projets en tableaux
+            $projectsArray = array_map(function($project) {
+                return $project->toArray();
+            }, $projects);
+
             header('Content-Type: application/json');
             echo json_encode([
                 'success' => true,
-                'projects' => $projects
+                'projects' => $projectsArray,
+                'meta' => [
+                    'total' => count($projectsArray),
+                    'filters' => [
+                        'search' => $searchTerm,
+                        'tags' => $tags
+                    ]
+                ]
             ]);
         } catch (\Exception $e) {
             header('Content-Type: application/json');

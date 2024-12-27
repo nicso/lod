@@ -548,4 +548,104 @@ class Project{
         }
     }
 
+    public function search(string $searchTerm = '', ?array $tags = null) {
+        try {
+            $query = '
+                SELECT DISTINCT
+                    p.*,
+                    u.id as author_id,
+                    u.userName as author_username,
+                    u.firstName as author_firstname,
+                    u.lastName as author_lastname,
+                    u.profile_picture as author_profile_picture,
+                    u.email as author_email,
+                    GROUP_CONCAT(DISTINCT t.id) as tag_ids,
+                    GROUP_CONCAT(DISTINCT t.tag_name) as tag_names
+                FROM project p
+                LEFT JOIN project_user pu ON p.id = pu.id_project
+                LEFT JOIN user u ON pu.id_user = u.id
+                LEFT JOIN project_tags pt ON p.id = pt.id_project
+                LEFT JOIN tag t ON pt.id_tag = t.id
+            ';
+
+            $params = [];
+            $conditions = [];
+
+            // Condition pour la recherche textuelle
+            if (!empty($searchTerm)) {
+                $conditions[] = '(
+                    p.title LIKE ?
+                    OR p.content LIKE ?
+                    OR u.userName LIKE ?
+                    OR t.tag_name LIKE ?
+                )';
+                $searchPattern = "%{$searchTerm}%";
+                $params = array_merge($params, array_fill(0, 4, $searchPattern));
+            }
+
+            // Condition pour la recherche par tags
+            if (!empty($tags)) {
+                $placeholders = str_repeat('?,', count($tags) - 1) . '?';
+                $conditions[] = 'p.id IN (
+                    SELECT pt2.id_project
+                    FROM project_tags pt2
+                    WHERE pt2.id_tag IN (' . $placeholders . ')
+                    GROUP BY pt2.id_project
+                    HAVING COUNT(DISTINCT pt2.id_tag) = ?
+                )';
+                $params = array_merge($params, $tags, [count($tags)]);
+            }
+
+            // Ajouter les conditions à la requête
+            if (!empty($conditions)) {
+                $query .= ' WHERE ' . implode(' AND ', $conditions);
+            }
+
+            $query .= ' GROUP BY p.id ORDER BY p.project_date DESC';
+
+            $stmt = $this->conn->prepare($query);
+            $stmt->execute($params);
+
+            $projects = [];
+            while ($data = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                // Filtrer les données du projet
+                $projectData = array_filter($data, function($key) {
+                    return !str_starts_with($key, 'author_');
+                }, ARRAY_FILTER_USE_KEY);
+
+                // Traiter les données de l'auteur
+                $authorData = null;
+                if ($data['author_id']) {
+                    $authorData = [
+                        'id' => $data['author_id'],
+                        'userName' => $data['author_username'],
+                        'firstName' => $data['author_firstname'],
+                        'lastName' => $data['author_lastname'],
+                        'profile_picture' => $data['author_profile_picture'],
+                        'email' => $data['author_email']
+                    ];
+                }
+
+                // Traiter les tags
+                $tags = null;
+                if ($data['tag_ids'] && $data['tag_names']) {
+                    $tagIds = explode(',', $data['tag_ids']);
+                    $tagNames = explode(',', $data['tag_names']);
+                    $tags = array_map(function($id, $name) {
+                        return ['id' => $id, 'name' => $name];
+                    }, $tagIds, $tagNames);
+                }
+
+                $project = self::hydrate($projectData);
+                $project->setAuthor($authorData);
+                $project->setTags($tags);
+                $projects[] = $project;
+            }
+
+            return $projects;
+        } catch (\PDOException $e) {
+            throw new \Exception("Erreur lors de la recherche des projets: " . $e->getMessage());
+        }
+    }
+
 }

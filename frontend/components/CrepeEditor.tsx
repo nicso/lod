@@ -8,7 +8,13 @@ export interface CrepeEditorHandle {
     getMarkdown: () => string | undefined;
 }
 
-const CrepeEditor = forwardRef<CrepeEditorHandle, { defaultValue: string }>(({ defaultValue }, ref) => {
+interface CrepeEditorProps {
+    defaultValue: string;
+    readonly?: boolean;
+}
+
+const CrepeEditor = forwardRef<CrepeEditorHandle, CrepeEditorProps >(({ defaultValue , readonly = true }, ref) => {
+
     const containerRef = useRef<HTMLDivElement | null>(null);
     const [editor, setEditor] = useState<Crepe | null>(null);
     const initializedRef = useRef(false);
@@ -26,7 +32,8 @@ const CrepeEditor = forwardRef<CrepeEditorHandle, { defaultValue: string }>(({ d
             defaultValue: defaultValue,
         });
 
-        newEditor.setReadonly(false);
+        newEditor.setReadonly(readonly);
+
         newEditor.create().then(() => {
             console.log('Editor created');
             setEditor(newEditor);
