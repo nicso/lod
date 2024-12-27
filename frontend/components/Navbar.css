@@ -16,6 +16,7 @@
     opacity: 0.2;
     z-index: -10000;
     animation: illumination var(--illumination-time) infinite linear;
+    pointer-events: none;
 }
 
 .logo-txt {

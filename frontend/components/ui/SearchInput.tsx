@@ -14,13 +14,13 @@ export const SearchInput = ({
     placeholder = "Rechercher un projet"
 }: SearchInputProps) => {
     return (
-        <div className="flex items-center gap-2 mb-4 relative">
+        <div className="flex items-center gap-2 mb-4 relative search-input">
             <input
                 type="text"
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
                 placeholder={placeholder}
-                className="w-full p-2 border rounded text-black focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                className="p-2"
             />
             {isLoading && (
                 <div className="absolute right-3">

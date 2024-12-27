@@ -50,7 +50,7 @@ export const TagFilter = ({ selectedTags, onTagsChange }: TagFilterProps) => {
     if (error) return <div>Erreur: {error}</div>;
 
     return (
-        <div className="flex flex-wrap gap-2 mb-4">
+        <div className="flex flex-wrap gap-2 mb-4 tags-filter">
             {tags.map(tag => (
                 <Badge
                     key={tag.id}

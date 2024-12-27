@@ -7,6 +7,8 @@ import { ErrorMessage } from "@/components/ErrorMessage";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { TagFilter } from "@/components/TagFilter";
 import debounce from 'lodash/debounce';
+import { Filter } from 'lucide-react';
+
 
 interface Project {
     id: number;
@@ -95,15 +97,26 @@ export default function Home() {
 
     return (
         <div className="main-container">
+            <div className="filters">
+                <Filter className="w-6 h-6" />
+                <div className="filter-grid">
+
+                    <TagFilter
+                        selectedTags={selectedTags}
+                        onTagsChange={handleTagsChange}
+                    />
+                    <select className="w-full p-2 border rounded text-black">
+                        <option value="">Status</option>
+                        <option value="">Draft</option>
+                        <option value="">Published</option>
+                    </select>
+                </div>
+            </div>
             <div className="filter-section mb-8">
                 <SearchInput
                     value={searchTerm}
                     onChange={handleSearch}
                     isLoading={isSearching}
-                />
-                <TagFilter
-                    selectedTags={selectedTags}
-                    onTagsChange={handleTagsChange}
                 />
             </div>
 
